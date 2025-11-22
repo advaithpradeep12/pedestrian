@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pedestrian Detection System</title>
+  <style>
+    body { font-family: Arial; text-align: center; margin-top: 30px; }
+    #status { font-size: 24px; margin: 20px; }
+    #traffic-light, #ped-light {
+      width: 100px; height: 100px; margin: 10px auto;
+      border-radius: 50%; background-color: grey;
+    }
+    #lights { display: flex; justify-content: center; gap: 50px; }
+    #lights div { display: flex; flex-direction: column; align-items: center; }
+    button { font-size: 18px; padding: 10px 20px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<h1>Pedestrian Detection System</h1>
+
+<video id="webcam" autoplay playsinline width="400" height="300"></video>
+<h2 id="status">Waiting for pedestrian...</h2>
+
+<div id="lights">
+  <div>
+    <div id="traffic-light"></div>
+    <p>Traffic</p>
+  </div>
+  <div>
+    <div id="ped-light"></div>
+    <p>Pedestrian</p>
+  </div>
+</div>
+
+<button onclick="requestCross()">Press Pedestrian Button</button>
+
+<!-- Load TensorFlow.js and Teachable Machine Image library -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+
+<script>
+let model, webcam, maxPredictions;
+let buttonPressed = false;
+
+async function init() {
+  // URL to your model files in the same folder
+  const URL = "./"; 
+  model = await tmImage.load(URL + "model.json", URL + "metadata.json");
+  maxPredictions = model.getTotalClasses();
+
+  // Setup webcam
+  webcam = new tmImage.Webcam(400, 300, true); // width, height, flip
+  await webcam.setup({ facingMode: "user" }); // ask for permission
+  await webcam.play();
+  window.requestAnimationFrame(loop);
+
+  // Replace the video element with the canvas from tmImage
+  document.getElementById("webcam").replaceWith(webcam.canvas);
+
+  // Initialize default lights
+  document.getElementById("traffic-light").style.backgroundColor = "green";
+  document.getElementById("ped-light").style.backgroundColor = "red";
+}
+
+// Main loop
+async function loop() {
+  webcam.update();
+  await predict();
+  window.requestAnimationFrame(loop);
+}
+
+// Pedestrian button pressed
+function requestCross() {
+  buttonPressed = true;
+  document.getElementById("status").innerText = "Checking camera...";
+}
+
+// Prediction function
+async function predict() {
+  const prediction = await model.predict(webcam.canvas);
+
+  let noPed = prediction[0].probability;
+  let ped = prediction[1].probability;
+
+  const trafficLight = document.getElementById("traffic-light");
+  const pedLight = document.getElementById("ped-light");
+
+  if (buttonPressed) {
+    if (ped > 0.6) {
+      document.getElementById("status").innerText = "Pedestrian detected!";
+
+      // Turn traffic red, pedestrian green
+      trafficLight.style.backgroundColor = "red";
+      pedLight.style.backgroundColor = "green";
+
+      buttonPressed = false;
+
+      // After 5 seconds, reset lights
+      setTimeout(() => {
+        trafficLight.style.backgroundColor = "green";
+        pedLight.style.backgroundColor = "red";
+        document.getElementById("status").innerText = "Waiting for pedestrian...";
+      }, 5000);
+    } else {
+      document.getElementById("status").innerText = "No pedestrian detected!";
+      buttonPressed = false;
+    }
+  }
+}
+
+// Start everything
+init();
+</script>
+
+</body>
+</html>
+
+
