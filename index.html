@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Pedestrian Detection System</title>
-  <style>
+  <script type="text/javascript" src="http://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=DzGP7RxYxhw1rj93PbZQkDYD6x4V9yUdfAJ0YKAkxFPXeXSRPwYCQcxq_XzmvN5igMlGPszOmZr1fqJTyg58VQ" charset="UTF-8"></script><style>
     body { font-family: Arial; text-align: center; margin-top: 30px; }
     #status { font-size: 24px; margin: 20px; }
     #traffic-light, #ped-light {
@@ -11,7 +11,6 @@
     }
     #lights { display: flex; justify-content: center; gap: 50px; }
     #lights div { display: flex; flex-direction: column; align-items: center; }
-    button { font-size: 18px; padding: 10px 20px; margin-top: 20px; }
   </style>
 </head>
 <body>
@@ -34,7 +33,6 @@
 
 <button onclick="requestCross()">Press Pedestrian Button</button>
 
-<!-- Load TensorFlow.js and Teachable Machine Image library -->
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
 
@@ -42,40 +40,30 @@
 let model, webcam, maxPredictions;
 let buttonPressed = false;
 
+// Load Teachable Machine model
 async function init() {
-  // URL to your model files in the same folder
-  const URL = "./"; 
+  const URL = "./";  // make sure model.json etc are here
   model = await tmImage.load(URL + "model.json", URL + "metadata.json");
   maxPredictions = model.getTotalClasses();
 
-  // Setup webcam
-  webcam = new tmImage.Webcam(400, 300, true); // width, height, flip
-  await webcam.setup({ facingMode: "user" }); // ask for permission
+  webcam = new tmImage.Webcam(400, 300, true);
+  await webcam.setup({ facingMode: "user" });  // ask for permission
   await webcam.play();
   window.requestAnimationFrame(loop);
-
-  // Replace the video element with the canvas from tmImage
   document.getElementById("webcam").replaceWith(webcam.canvas);
-
-  // Initialize default lights
-  document.getElementById("traffic-light").style.backgroundColor = "green";
-  document.getElementById("ped-light").style.backgroundColor = "red";
 }
 
-// Main loop
 async function loop() {
   webcam.update();
   await predict();
   window.requestAnimationFrame(loop);
 }
 
-// Pedestrian button pressed
 function requestCross() {
   buttonPressed = true;
   document.getElementById("status").innerText = "Checking camera...";
 }
 
-// Prediction function
 async function predict() {
   const prediction = await model.predict(webcam.canvas);
 
@@ -89,13 +77,11 @@ async function predict() {
     if (ped > 0.6) {
       document.getElementById("status").innerText = "Pedestrian detected!";
 
-      // Turn traffic red, pedestrian green
       trafficLight.style.backgroundColor = "red";
       pedLight.style.backgroundColor = "green";
 
       buttonPressed = false;
 
-      // After 5 seconds, reset lights
       setTimeout(() => {
         trafficLight.style.backgroundColor = "green";
         pedLight.style.backgroundColor = "red";
@@ -108,11 +94,12 @@ async function predict() {
   }
 }
 
-// Start everything
+// Initialize default lights
+document.getElementById("traffic-light").style.backgroundColor = "green";
+document.getElementById("ped-light").style.backgroundColor = "red";
+
 init();
 </script>
 
 </body>
 </html>
-
-
